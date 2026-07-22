@@ -343,71 +343,72 @@
         }
 
         @media (max-width: 600px) {
-            /* スマホ（縦画面）向けのレイアウト微調整 */
+            /* スマホ（縦画面）向けの大幅レイアウト最適化 */
             .book-container, .next-page-background {
-                width: 170vw;
-                height: 130vh;
-                top: -20vh;
-                left: -55vw;
-                transform: rotateX(2deg) rotateY(1deg) rotateZ(-1deg);
+                /* 本をさらに巨大化して左上へ大胆に押し出し、文章を画面外へ除去 */
+                width: 260vw;
+                height: 180vh;
+                top: -45vh;
+                left: -130vw;
+                transform: rotateX(1deg) rotateY(1deg) rotateZ(-0.5deg);
             }
 
+            /* キャンバス（落書きエリア）を画面中央〜上部に広々と配置 */
             .canvas-container {
-                bottom: max(16vh, 160px);
-                right: 4vw;
+                position: absolute;
+                bottom: 125px; /* コントロールパネルの真上に配置 */
+                right: 50%;
+                transform: translateX(50%); /* 画面中央にドカンと配置 */
                 width: min(92vw, 360px);
                 height: auto;
                 aspect-ratio: 450 / 350;
             }
 
             .social-text {
-                right: min(95vw, 380px);
+                /* スマホでは文章エリアを小さくして左上遠くに押しやる */
+                right: 480px;
                 left: 5vw;
-                top: 10vh;
-                font-size: 0.95rem;
-                line-height: 1.5;
+                top: 5vh;
+                font-size: 0.8rem;
+                opacity: 0.3; /* 主役のキャンバスを邪魔しないよう薄く */
             }
 
-            .social-text h2 {
-                font-size: 1.6rem;
-                margin-bottom: 15px;
-                padding-bottom: 8px;
-            }
-
-            /* UIボタン群のスリム化・タップ最適化 */
+            /* 下部UIコントロールの超コンパクト化 */
             .controls-container {
-                padding: 10px 12px 18px;
-                gap: 8px;
+                padding: 6px 10px 10px;
+                gap: 5px;
+                background: rgba(255, 255, 255, 0.85); /* 読みやすく少し不透明度を上げる */
             }
 
             .controls-row {
-                gap: 6px;
+                gap: 4px;
             }
 
             button {
-                padding: 10px 12px;
-                font-size: 0.85rem;
-                min-height: 44px; /* タッチしやすいターゲットサイズ */
+                padding: 6px 8px;
+                font-size: 0.78rem;
+                min-height: 36px; /* タップしやすく高さを圧縮 */
+                border-radius: 4px;
             }
 
             .btn-next, .btn-play, .btn-stop {
-                font-size: 0.95rem;
+                font-size: 0.85rem;
             }
 
             .page-counter {
-                padding: 8px 12px;
-                font-size: 0.9rem;
-                min-width: 55px;
+                padding: 6px 8px;
+                font-size: 0.8rem;
+                min-width: 48px;
             }
 
             .options-panel {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-                gap: 8px;
+                padding: 4px 8px;
+                font-size: 0.75rem;
+                gap: 6px;
             }
 
             input[type="range"] {
-                width: 60px;
+                width: 50px;
             }
         }
     </style>
