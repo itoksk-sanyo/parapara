@@ -319,22 +319,96 @@
         /* ユーティリティ */
         .hidden { display: none !important; }
         
-        /* スマホ向けのレイアウト調整 */
-        @media (max-width: 600px) {
-            .controls-row {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
+        /* --- レスポンシブ対応 (タブレット & スマホ) --- */
+        @media (max-width: 1024px) {
             .book-container, .next-page-background {
-                width: 100vw; height: 120vh;
-                top: -5vh; left: 0;
+                width: 150vw;
+                height: 140vh;
+                top: -35vh;
+                left: -40vw;
             }
             .canvas-container {
-                bottom: 18vh; right: 2vw;
-                width: 320px; height: 240px;
+                bottom: 22vh;
+                right: 6vw;
+                width: min(85vw, 420px);
+                height: auto;
+                aspect-ratio: 450 / 350;
             }
-            .social-text { right: 350px; left: 5vw; top: 10vh; font-size: 1rem; line-height: 1.6; } /* スマホでも被らないように */
-            .social-text h2 { font-size: 2rem; margin-bottom: 20px; }
+            .social-text {
+                right: min(90vw, 460px);
+                left: 8vw;
+                top: 15vh;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            /* スマホ（縦画面）向けのレイアウト微調整 */
+            .book-container, .next-page-background {
+                width: 170vw;
+                height: 130vh;
+                top: -20vh;
+                left: -55vw;
+                transform: rotateX(2deg) rotateY(1deg) rotateZ(-1deg);
+            }
+
+            .canvas-container {
+                bottom: max(16vh, 160px);
+                right: 4vw;
+                width: min(92vw, 360px);
+                height: auto;
+                aspect-ratio: 450 / 350;
+            }
+
+            .social-text {
+                right: min(95vw, 380px);
+                left: 5vw;
+                top: 10vh;
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+
+            .social-text h2 {
+                font-size: 1.6rem;
+                margin-bottom: 15px;
+                padding-bottom: 8px;
+            }
+
+            /* UIボタン群のスリム化・タップ最適化 */
+            .controls-container {
+                padding: 10px 12px 18px;
+                gap: 8px;
+            }
+
+            .controls-row {
+                gap: 6px;
+            }
+
+            button {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+                min-height: 44px; /* タッチしやすいターゲットサイズ */
+            }
+
+            .btn-next, .btn-play, .btn-stop {
+                font-size: 0.95rem;
+            }
+
+            .page-counter {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+                min-width: 55px;
+            }
+
+            .options-panel {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                gap: 8px;
+            }
+
+            input[type="range"] {
+                width: 60px;
+            }
         }
     </style>
 </head>
