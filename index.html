@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>教科書の端っこパラパラマンガ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&family=Shippori+Mincho&display=swap" rel="stylesheet">
+    <style>
+        /* カスタムスタイル: 机と教科書の世界観 */
+        body {
+            touch-action: none;
+            overscroll-behavior: none;
+            /* 木の机風の背景（少しリアルに暗め） */
+            background-color: #644123;
+            background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 20px);
+            font-family: 'Kiwi Maru', serif;
+        }
+
+        /* 画面全体に広がる教科書（右ページ全体を表現） */
+        .textbook-wrapper {
+            background-color: #FDFBF7; /* 紙の色 */
+            border-radius: 2px 12px 12px 2px;
+            /* 何百枚も重なっている分厚さと、左側の綴じ目（ノド）の影を表現 */
+            box-shadow: 
+                inset 30px 0 40px -15px rgba(0,0,0,0.15), /* 左の綴じ目(ノド)の深い影 */
+                1px 1px 0px #f5f4ef,
+                2px 2px 0px #e0dfd8,
+                3px 3px 0px #f5f4ef,
+                4px 4px 0px #d1d0c9,
+                5px 5px 0px #f5f4ef,
+                6px 6px 0px #c2c1ba,
+                7px 7px 0px #f5f4ef,
+                8px 8px 0px #b3b2ac,
+                15px 20px 30px rgba(0,0,0,0.6); /* 机に落ちる濃い影 */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 描画エリア（右下の端っこ専用） */
+        #canvas-container {
+            /* 周りのテキストから少し浮き出させる（描画領域の明示） */
+            background: radial-gradient(circle at bottom right, #ffffff, transparent 85%);
+            border-top: 2px dashed rgba(0,0,0,0.06);
+            border-left: 2px dashed rgba(0,0,0,0.06);
+            border-top-left-radius: 24px;
+            /* キャンバス自体が少し浮いているようなハイライト */
+            box-shadow: inset 2px 2px 10px rgba(255,255,255,0.9);
+        }
+
+        /* 右下のめくる部分の親指の跡・紙のしなりをリアルに表現 */
+        .page-curl-detail {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            /* 指で押さえた時の凹みと、紙のめくれ上がりの光沢 */
+            background: radial-gradient(circle at 75% 75%, rgba(0,0,0,0.03) 0%, transparent 50%);
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.04), inset 2px 2px 8px rgba(255,255,255,0.6);
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        /* 社会の教科書のテキストスタイル */
+        .social-text {
+            font-family: 'Shippori Mincho', serif;
+            color: #1a1a1a;
+            opacity: 0.8;
+            /* 選択できないようにする */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        canvas {
+            touch-action: none;
+            z-index: 10;
+            /* 鉛筆風のカスタムカーソル */
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233f3f46' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z'/%3E%3C/svg%3E") 2 22, crosshair;
+        }
+        
+        .onion-skin-canvas {
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        /* 付箋風のボタン */
+        .btn-sticky {
+            position: relative;
+            border-radius: 2px 8px 8px 2px;
+            transform: rotate(-1deg);
+            box-shadow: 2px 3px 5px rgba(0,0,0,0.3);
+        }
+        .btn-sticky::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; bottom: 0; width: 20px;
+            background: rgba(0,0,0,0.05);
+            border-right: 1px dashed rgba(0,0,0,0.1);
+        }
+        .btn-sticky:active {
+            transform: rotate(0deg) scale(0.97);
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .btn-sticky-yellow { background-color: #fef08a; }
+        .btn-sticky-blue { background-color: #bae6fd; }
+        .btn-sticky-pink { background-color: #fbcfe8; }
+        .btn-sticky-green { background-color: #bbf7d0; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col p-2 sm:p-4 box-border relative overflow-hidden items-center">
+
+    <!-- ヘッダー（タイトル）を少し控えめに左上に配置 -->
+    <header class="w-full max-w-5xl text-left py-1 z-10 px-2">
+        <h1 class="text-lg sm:text-xl font-bold text-white tracking-wider opacity-80" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">🤫 教科書の端っこパラパラマンガ</h1>
+    </header>
+
+    <!-- メイン領域：画面全体に広がる教科書（右ページ） -->
+    <div class="textbook-wrapper flex-grow w-full max-w-5xl mt-2 mb-4 relative z-0 flex flex-col">
+        
+        <!-- 社会の教科書のダミーテキスト（背景） -->
+        <div class="social-text absolute inset-0 p-6 pl-10 sm:p-10 sm:pl-16 md:p-14 md:pl-20 pointer-events-none z-0">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 border-b-2 border-gray-400 pb-2">第5章 近代国家への道</h2>
+            
+            <div class="columns-1 sm:columns-2 gap-8 text-sm sm:text-base leading-loose">
+                <h3 class="font-bold text-lg mb-2">1. 明治維新と新政府の成立</h3>
+                <p class="mb-4 text-justify">ペリー来航を契機とした開国後、国内の混乱を経て、1868年に江戸幕府は倒れ、天皇を中心とする新しい政府が誕生した。これを明治維新と呼ぶ。新政府は、欧米の近代国家をモデルに、急進的な改革を推し進めた。</p>
+                <p class="mb-4 text-justify">まず、版籍奉還と廃藩置県を行い、全国を直接支配する中央集権体制を整えた。また、身分制度を改めて四民平等とし、1873年には地租改正を行って、近代国家の基盤となる安定した税収を確保した。</p>
+                
+                <h3 class="font-bold text-lg mb-2 mt-6">2. 富国強兵と殖産興業</h3>
+                <p class="mb-4 text-justify">欧米列強に対抗するため、政府は「富国強兵」をスローガンに掲げた。1872年に学制を発布して近代的な学校教育を導入し、翌年には徴兵令を出して近代的な国民軍を創設した。</p>
+                <p class="mb-4 text-justify">経済面では、「殖産興業」政策を推進。官営模範工場（富岡製糸場など）を設立し、鉄道や郵便、電信などのインフラ整備を急ピッチで進めた。西洋の技術や文化が急速に流入し、「文明開化」と呼ばれる風俗の変化も見られた。</p>
+            </div>
+        </div>
+
+        <!-- キャンバスエリア (教科書の右下端っこに固定) -->
+        <div id="canvas-container" class="absolute bottom-0 right-0 w-[70%] sm:w-[50%] md:w-[45%] h-[45%] sm:h-[50%] min-h-[220px] max-h-[400px]">
+            <!-- 右下のめくる部分のディテール -->
+            <div class="page-curl-detail"></div>
+            
+            <!-- オニオンスキン -->
+            <canvas id="onionCanvas" class="absolute top-0 left-0 w-full h-full onion-skin-canvas hidden rounded-br-[10px]"></canvas>
+            <!-- メインキャンバス -->
+            <canvas id="drawCanvas" class="absolute top-0 left-0 w-full h-full bg-transparent rounded-br-[10px]"></canvas>
+            <!-- 再生用キャンバス -->
+            <canvas id="playCanvas" class="absolute top-0 left-0 w-full h-full bg-transparent hidden rounded-br-[10px]"></canvas>
+            
+            <!-- 再生中のオーバーレイテキスト -->
+            <div id="playingOverlay" class="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md hidden animate-pulse z-50">
+                ▶ 再生中
+            </div>
+        </div>
+    </div>
+
+    <!-- コントロールパネル (机の上の文房具風) -->
+    <div id="controls" class="w-full max-w-5xl p-2 flex flex-col gap-4 z-10">
+        
+        <!-- ページ情報とツール類 -->
+        <div class="flex flex-wrap justify-between items-center w-full gap-2">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span id="pageCounter" class="bg-white/90 text-gray-800 text-sm font-bold px-4 py-1.5 rounded-sm shadow border-l-4 border-blue-400 transform -rotate-1">
+                    P. 1 / 1
+                </span>
+                <button id="clearBtn" class="bg-gray-100 text-gray-700 hover:bg-white px-3 py-1.5 rounded shadow-sm border border-gray-300 transition-colors transform rotate-1 text-sm font-bold flex items-center gap-1" title="現在のページを消しゴムで消す">
+                    <span class="text-lg">🧽</span> 消す
+                </button>
+                <button id="downloadBtn" class="bg-indigo-100 text-indigo-700 hover:bg-white px-3 py-1.5 rounded shadow-sm border border-indigo-300 transition-colors transform -rotate-1 text-sm font-bold flex items-center gap-1" title="GIFアニメとしてダウンロード">
+                    <span class="text-lg">💾</span> GIF保存
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-4 bg-white/90 px-4 py-1.5 rounded-sm shadow transform rotate-1 mt-2 sm:mt-0">
+                <label class="flex items-center gap-1 text-sm text-gray-700 font-bold cursor-pointer">
+                    <input type="checkbox" id="onionSkinToggle" class="rounded text-blue-500 focus:ring-blue-500" checked>
+                    前のページを透かす
+                </label>
+                <div class="flex items-center gap-1 border-l border-gray-300 pl-3">
+                    <label for="speedSlider" class="text-sm text-gray-700 font-bold">速度:</label>
+                    <input type="range" id="speedSlider" min="2" max="20" value="8" class="w-20 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+
+        <!-- メインアクションボタン (付箋風) -->
+        <div class="flex justify-between gap-2 sm:gap-4 w-full">
+            <!-- 描画モード時のボタン -->
+            <button id="prevPageBtn" class="btn-sticky btn-sticky-pink flex-1 py-3 px-2 text-gray-800 font-bold text-sm sm:text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                ◀ 前のページ
+            </button>
+            <button id="nextPageBtn" class="btn-sticky btn-sticky-yellow flex-1 py-3 px-2 text-gray-800 font-bold text-sm sm:text-lg transition-all flex items-center justify-center gap-1">
+                新しいページへ ✏️
+            </button>
+            <button id="playBtn" class="btn-sticky btn-sticky-green flex-1 py-3 px-2 text-gray-800 font-bold text-sm sm:text-lg transition-all flex items-center justify-center gap-1">
+                ▶ パラパラする！
+            </button>
+            
+            <!-- 再生モード時のボタン (初期は非表示) -->
+            <button id="stopBtn" class="hidden w-full py-4 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xl rounded-lg shadow-xl transition-colors active:scale-95 flex items-center justify-center gap-2 border-4 border-red-800">
+                ⏹ 先生が来た！（停止して戻る）
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const canvasContainer = document.getElementById('canvas-container');
+        const drawCanvas = document.getElementById('drawCanvas');
+        const onionCanvas = document.getElementById('onionCanvas');
+        const playCanvas = document.getElementById('playCanvas');
+        
+        const drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
+        const onionCtx = onionCanvas.getContext('2d');
+        const playCtx = playCanvas.getContext('2d');
+
+        // ボタン・UI要素
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const pageCounter = document.getElementById('pageCounter');
+        const onionSkinToggle = document.getElementById('onionSkinToggle');
+        const speedSlider = document.getElementById('speedSlider');
+        const playingOverlay = document.getElementById('playingOverlay');
+
+        // アプリケーションの状態
+        const state = {
+            pages: [],         // 各ページの画像データ(ImageData)を保存する配列
+            currentPageIndex: 0, // 現在表示・編集しているページのインデックス
+            isDrawing: false,  // 描画中かどうか
+            isPlaying: false,  // 再生中かどうか
+            playInterval: null, // setIntervalのID
+            fps: 8,             // 1秒あたりのフレーム数
+            lastX: 0,
+            lastY: 0,
+            penColor: '#3f3f46', // シャープペンシル風の濃いグレー
+            penWidth: 2.5        // 少し細めにしてシャープペンシル感
+        };
+
+        // 初期化関数
+        function init() {
+            // キャンバスサイズをコンテナに合わせる
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // イベントリスナーの設定
+            setupDrawingEvents();
+            setupUIEvents();
+
+            // 最初の空のページを追加して表示
+            saveCurrentPageToState();
+            updateUI();
+        }
+
+        // キャンバスのサイズをコンテナのサイズに合わせる
+        function resizeCanvas() {
+            // 現在の描画内容を一時保存
+            let currentImgData = null;
+            if (state.pages[state.currentPageIndex] && drawCanvas.width > 0) {
+                currentImgData = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+            }
+
+            const rect = canvasContainer.getBoundingClientRect();
+            // 縦横比を固定するか、コンテナに合わせるか。今回はコンテナに合わせる
+            const w = rect.width;
+            const h = rect.height;
+
+            [drawCanvas, onionCanvas, playCanvas].forEach(c => {
+                // デバイスピクセル比を考慮して高解像度対応（今回はシンプルにするため1:1）
+                c.width = w;
+                c.height = h;
+            });
+
+            // 線のスタイルを再設定
+            setCanvasStyle(drawCtx);
+
+            // リサイズ前に描画内容があった場合は描き直す（リサイズによるクリア防止）
+            // ※厳密にはアスペクト比が変わると歪むが、簡易実装とする
+            if (currentImgData && state.pages.length > 0) {
+                 loadPage(state.currentPageIndex);
+            } else if (state.pages.length === 0) {
+                // 初回ロード時
+                drawCtx.fillStyle = 'transparent'; // 背景は透明（HTML側で白を設定）
+                drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            }
+        }
+
+        function setCanvasStyle(ctx) {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = state.penWidth;
+            ctx.strokeStyle = state.penColor;
+        }
+
+        // マウス/タッチ座標の取得
+        function getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            // タッチイベントかマウスイベントか判定
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // キャンバス内の相対座標を計算
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function setupDrawingEvents() {
+            // 開始
+            const startDrawing = (e) => {
+                if (state.isPlaying) return; // 再生中は描画不可
+                e.preventDefault(); // スクロール防止
+                state.isDrawing = true;
+                const pos = getPos(e, drawCanvas);
+                state.lastX = pos.x;
+                state.lastY = pos.y;
+                
+                // 点を描画（クリック/タップのみの場合）
+                drawCtx.beginPath();
+                drawCtx.arc(pos.x, pos.y, state.penWidth / 2, 0, Math.PI * 2);
+                drawCtx.fillStyle = state.penColor;
+                drawCtx.fill();
+                
+                drawCtx.beginPath();
+                drawCtx.moveTo(pos.x, pos.y);
+            };
+
+            // 移動・描画
+            const draw = (e) => {
+                if (!state.isDrawing || state.isPlaying) return;
+                e.preventDefault(); // スクロール防止
+                const pos = getPos(e, drawCanvas);
+                
+                drawCtx.lineTo(pos.x, pos.y);
+                drawCtx.stroke();
+                
+                state.lastX = pos.x;
+                state.lastY = pos.y;
+            };
+
+            // 終了
+            const stopDrawing = (e) => {
+                if (state.isDrawing) {
+                    drawCtx.closePath();
+                    state.isDrawing = false;
+                    // 描き終わったら現在のページの状態を保存
+                    saveCurrentPageToState();
+                }
+            };
+
+            // マウスイベント
+            drawCanvas.addEventListener('mousedown', startDrawing);
+            drawCanvas.addEventListener('mousemove', draw);
+            drawCanvas.addEventListener('mouseup', stopDrawing);
+            drawCanvas.addEventListener('mouseout', stopDrawing);
+
+            // タッチイベント (モバイル対応)
+            drawCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+            drawCanvas.addEventListener('touchmove', draw, { passive: false });
+            drawCanvas.addEventListener('touchend', stopDrawing);
+            drawCanvas.addEventListener('touchcancel', stopDrawing);
+        }
+
+        // 現在のキャンバスの状態を配列に保存
+        function saveCurrentPageToState() {
+            // キャンバスのサイズが0の場合は取得しない（エラー回避）
+            if (drawCanvas.width === 0 || drawCanvas.height === 0) return;
+            
+            // キャンバスの画像データを取得
+            const imgData = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+            state.pages[state.currentPageIndex] = imgData;
+        }
+
+        // 指定したインデックスのページを読み込んで表示
+        function loadPage(index) {
+            // キャンバスをクリア
+            clearCanvas(drawCtx);
+            
+            if (state.pages[index]) {
+                // 保存されている画像データがあれば描画
+                drawCtx.putImageData(state.pages[index], 0, 0);
+            }
+            
+            state.currentPageIndex = index;
+            updateOnionSkin();
+            updateUI();
+        }
+
+        // キャンバスをクリアするユーティリティ関数
+        function clearCanvas(ctx) {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+
+        // オニオンスキン（前のページの薄い表示）の更新
+        function updateOnionSkin() {
+            clearCanvas(onionCtx);
+            
+            // 透かし設定がオンで、かつ2ページ目以降（前のページが存在する）場合
+            if (onionSkinToggle.checked && state.currentPageIndex > 0) {
+                onionCanvas.classList.remove('hidden');
+                const prevPageData = state.pages[state.currentPageIndex - 1];
+                if (prevPageData) {
+                    // 画像データを描画 (CSSで薄くしている)
+                    onionCtx.putImageData(prevPageData, 0, 0);
+                }
+            } else {
+                onionCanvas.classList.add('hidden');
+            }
+        }
+
+        // UI（ボタンの状態、カウンターなど）の更新
+        function updateUI() {
+            const total = Math.max(state.pages.length, 1);
+            const current = state.currentPageIndex + 1;
+            pageCounter.textContent = `P. ${current} / ${total}`;
+
+            // ボタンの有効/無効化
+            prevPageBtn.disabled = state.currentPageIndex === 0;
+            
+            // 最低2枚ないと再生ボタンは意味がない
+            if (state.pages.length >= 2) {
+                playBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                playBtn.disabled = false;
+            } else {
+                playBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                playBtn.disabled = true;
+            }
+
+            // 「次へ」ボタンのテキストと付箋の色切り替え（最後のページなら黄色、それ以外は水色）
+            if (state.currentPageIndex === state.pages.length - 1) {
+                nextPageBtn.innerHTML = '新しいページを描く ✏️';
+                nextPageBtn.classList.remove('btn-sticky-blue');
+                nextPageBtn.classList.add('btn-sticky-yellow');
+            } else {
+                nextPageBtn.innerHTML = '次のページへ ▶';
+                nextPageBtn.classList.remove('btn-sticky-yellow');
+                nextPageBtn.classList.add('btn-sticky-blue');
+            }
+        }
+
+        function setupUIEvents() {
+            // 前のページへ
+            prevPageBtn.addEventListener('click', () => {
+                if (state.currentPageIndex > 0) {
+                    loadPage(state.currentPageIndex - 1);
+                }
+            });
+
+            // 次のページへ / 新規ページ追加
+            nextPageBtn.addEventListener('click', () => {
+                // 現在が最後のページなら、新しい空のページを追加
+                if (state.currentPageIndex === state.pages.length - 1) {
+                    state.currentPageIndex++;
+                    clearCanvas(drawCtx);
+                    saveCurrentPageToState(); // 空の状態を保存
+                    updateOnionSkin();
+                    updateUI();
+                } else {
+                    // 途中のページを見ている場合は、単純に次のページへ移動
+                    loadPage(state.currentPageIndex + 1);
+                }
+            });
+
+            // 現在のページをクリア
+            clearBtn.addEventListener('click', () => {
+                clearCanvas(drawCtx);
+                saveCurrentPageToState();
+            });
+
+            // GIF保存
+            downloadBtn.addEventListener('click', generateAndDownloadGIF);
+
+            // 透かしのオンオフ
+            onionSkinToggle.addEventListener('change', updateOnionSkin);
+
+            // 速度変更
+            speedSlider.addEventListener('input', (e) => {
+                state.fps = parseInt(e.target.value);
+                // 再生中なら間隔をリセット
+                if (state.isPlaying) {
+                    stopAnimation();
+                    startAnimation();
+                }
+            });
+
+            // 再生ボタン
+            playBtn.addEventListener('click', () => {
+                if (state.pages.length >= 2) {
+                    startPlayback();
+                }
+            });
+
+            // 停止ボタン
+            stopBtn.addEventListener('click', stopPlayback);
+        }
+
+        function startPlayback() {
+            // 状態変更
+            state.isPlaying = true;
+            
+            // UIの切り替え
+            document.querySelectorAll('#controls button:not(#stopBtn)').forEach(btn => btn.classList.add('hidden'));
+            onionSkinToggle.parentElement.classList.add('hidden');
+            speedSlider.parentElement.classList.add('hidden');
+            
+            stopBtn.classList.remove('hidden');
+            playingOverlay.classList.remove('hidden');
+            
+            // キャンバスの切り替え
+            drawCanvas.classList.add('hidden');
+            onionCanvas.classList.add('hidden');
+            playCanvas.classList.remove('hidden');
+            
+            // アニメーション開始
+            let playIndex = 0;
+            
+            // アニメーションループ関数
+            const animate = () => {
+                // 再生用キャンバスをクリア (背景の教科書印字はそのまま見せるため透明にクリア)
+                playCtx.clearRect(0, 0, playCanvas.width, playCanvas.height);
+                
+                // 現在のフレームを描画
+                if (state.pages[playIndex]) {
+                    playCtx.putImageData(state.pages[playIndex], 0, 0);
+                }
+                
+                // 次のフレームへ (ループさせる)
+                playIndex = (playIndex + 1) % state.pages.length;
+            };
+            
+            // 最初の1フレーム目をすぐに描画
+            animate();
+            
+            // 指定されたFPSでループ設定
+            const intervalMs = 1000 / state.fps;
+            state.playInterval = setInterval(animate, intervalMs);
+        }
+
+        function stopPlayback() {
+            // ループ停止
+            clearInterval(state.playInterval);
+            state.playInterval = null;
+            state.isPlaying = false;
+            
+            // UIの復元
+            document.querySelectorAll('#controls button:not(#stopBtn)').forEach(btn => btn.classList.remove('hidden'));
+            onionSkinToggle.parentElement.classList.remove('hidden');
+            speedSlider.parentElement.classList.remove('hidden');
+            
+            stopBtn.classList.add('hidden');
+            playingOverlay.classList.add('hidden');
+            
+            // キャンバスの復元
+            playCanvas.classList.add('hidden');
+            drawCanvas.classList.remove('hidden');
+            
+            // 透かしの状態を再評価して復元
+            updateOnionSkin();
+            updateUI();
+        }
+
+        function generateAndDownloadGIF() {
+            // 最低2ページ無いとアニメーションにならないためチェック
+            if (state.pages.length < 2) {
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = '⚠️ 2枚以上描いてね';
+                setTimeout(() => { downloadBtn.innerHTML = originalText; }, 2000);
+                return;
+            }
+
+            // ボタンのUIを「処理中」に変更
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '⏳ 変換中...';
+            downloadBtn.disabled = true;
+
+            const frames = [];
+            // 背景合成用の一時キャンバス
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = drawCanvas.width;
+            tempCanvas.height = drawCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // 描画データ保持用の一時キャンバス
+            const imgCanvas = document.createElement('canvas');
+            imgCanvas.width = drawCanvas.width;
+            imgCanvas.height = drawCanvas.height;
+            const imgCtx = imgCanvas.getContext('2d');
+
+            // すべてのページを処理
+            for (let i = 0; i < state.pages.length; i++) {
+                // 背景を教科書の紙の色に塗りつぶす (透明だとGIF変換時におかしくなるため)
+                tempCtx.fillStyle = '#FDFBF7';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                if (state.pages[i]) {
+                    // 画像データを一時キャンバスにセット
+                    imgCtx.putImageData(state.pages[i], 0, 0);
+                    // 背景の上に線画を重ねて描画
+                    tempCtx.drawImage(imgCanvas, 0, 0);
+                }
+                // Base64形式の画像URLに変換して配列に追加
+                frames.push(tempCanvas.toDataURL('image/png'));
+            }
+
+            // fpsからフレーム間の秒数を計算
+            const interval = 1 / state.fps;
+
+            // gifshotを使ってGIF生成
+            gifshot.createGIF({
+                images: frames,
+                gifWidth: drawCanvas.width,
+                gifHeight: drawCanvas.height,
+                interval: interval,
+                numFrames: frames.length,
+            }, function(obj) {
+                if(!obj.error) {
+                    // 生成されたGIFをダウンロード
+                    const image = obj.image;
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = 'parapara_manga.gif';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    downloadBtn.innerHTML = '✨ 完了！';
+                } else {
+                    downloadBtn.innerHTML = '❌ エラー';
+                }
+                
+                // 少し待ってからボタンを元の状態に戻す
+                setTimeout(() => { 
+                    downloadBtn.innerHTML = originalText; 
+                    downloadBtn.disabled = false;
+                }, 2000);
+            });
+        }
+
+        // アプリ起動
+        window.onload = init;
+
+    </script>
+</body>
+</html>
