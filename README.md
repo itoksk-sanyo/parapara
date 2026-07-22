@@ -12,7 +12,9 @@
 
 ## 🚀 今すぐ遊ぶ
 
-**[パラパラマンガを作成する →](https://itoksk-sanyo.github.io/parapara/)**
+**GitHub Pages:** [パラパラマンガを作成する →](https://itoksk-sanyo.github.io/parapara/)
+
+**Google Apps Script:** [GAS デプロイ版 →](https://script.google.com/a/macros/schoolagent.jp/s/AKfycbyt0KgeuOo0fQc5sguUsnu3rM7GAHVIsHXNEaO1AfHQgdS0I_OVw7tgue56UDkZvx62dA/exec)
 
 ## 動作確認（ローカル）
 
@@ -44,7 +46,7 @@ python -m http.server 8000
 
 ## ライセンス
 
-現時点ではライセンスが設定されていません。必要に応じて `LICENSE` ファイルを追加してください（例: MIT, Apache-2.0 など）。
+このプロジェクトは [MIT ライセンス](LICENSE) の下で公開されています。
 
 ## 作者
 
