@@ -14,7 +14,7 @@
 
 **GitHub Pages:** [パラパラマンガを作成する →](https://itoksk-sanyo.github.io/parapara/)
 
-**Google Apps Script:** [GAS デプロイ版 →](https://script.google.com/a/macros/schoolagent.jp/s/AKfycbyt0KgeuOo0fQc5sguUsnu3rM7GAHVIsHXNEaO1AfHQgdS0I_OVw7tgue56UDkZvx62dA/exec)
+**Google Apps Script:** [GAS デプロイ版 →](https://script.google.com/a/macros/schoolagent.jp/s/AKfycbzBxDYJwtnrOTzhpqzGJ0nVb7L2gxmO_wafyT0adnavG91dGCzzDacJ8otkwgFK0CropQ/exec)
 
 ## 動作確認（ローカル）
 
