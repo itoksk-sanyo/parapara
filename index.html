@@ -4,30 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>教科書の端っこパラパラマンガ</title>
-    <!-- GIF生成ライブラリ (CDN) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js"></script>
     <style>
-        /* --- 基本リセットとフォント --- */
-        body {
-            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; /* 教科書らしい明朝体 */
-            /* 背景を木の机風に */
-            background-color: #8c6b4a;
-            background-image: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.05) 40px, rgba(0,0,0,0.05) 42px);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            color: #333;
+        * {
+            box-sizing: border-box;
         }
 
-        /* --- レイアウトのラッパー --- */
-        /* 本を配置する上部エリア */
+        /* --- 基本リセットとフォント --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+            background-color: #8c6b4a;
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.05) 40px, rgba(0,0,0,0.05) 42px);
+            color: #333;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            display: grid;
+            grid-template-rows: 1fr auto;
+            grid-template-columns: 1fr;
+        }
+
+        /* --- 本を配置するエリア --- */
         .book-wrapper {
-            flex: 1;
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 9;
-            min-height: 300px;
+            height: 100%;
             perspective: 2000px;
             overflow: hidden;
         }
@@ -59,7 +66,7 @@
             z-index: 1;
         }
 
-        /* --- 再生時の柔らかいパラパラ感（紙が微振動して弾ける動き） --- */
+        /* --- 再生時のパラパラ感 --- */
         .soft-flip-active {
             animation: softPaperFlick var(--flip-duration, 0.12s) infinite alternate ease-in-out;
         }
@@ -89,7 +96,7 @@
             backface-visibility: hidden;
         }
 
-        /* --- 教科書のダミーテキスト --- */
+        /* --- 教科書テキスト --- */
         .social-text {
             position: absolute;
             top: 20vh;
@@ -129,11 +136,8 @@
             border-radius: 4px;
             z-index: 20;
             backface-visibility: hidden;
-            
             will-change: transform;
             transform: translateZ(2px);
-            
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>') 12 12, auto;
         }
 
         canvas {
@@ -151,13 +155,11 @@
             pointer-events: none;
         }
 
-        /* 次のページの中身を入れるコンテナ */
         .next-page-content {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
         }
 
-        /* アニメーション用のクラス */
         .is-turning {
             transform-origin: 0 center;
             animation: turnWholePage var(--flip-duration, 0.4s) linear forwards;
@@ -194,7 +196,7 @@
 
         /* --- UIコントロール（下部固定） --- */
         .controls-container {
-            padding: 15px 20px 25px;
+            padding: 15px 20px 20px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
@@ -203,7 +205,8 @@
             flex-direction: column;
             gap: 12px;
             z-index: 100;
-            flex-shrink: 0;
+            overflow-y: auto;
+            max-height: 35vh;
         }
 
         .controls-row {
@@ -211,13 +214,10 @@
             justify-content: space-between;
             align-items: center;
             gap: 15px;
-            max-width: 100%;
-            margin: 0 auto;
-            width: 100%;
             flex-wrap: wrap;
+            width: 100%;
         }
 
-        /* ボタンのスタイル（付箋風） */
         button {
             padding: 12px 20px;
             font-size: 1rem;
@@ -250,10 +250,8 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
 
-        /* 各種ボタンのカラー */
         .btn-prev { background-color: #d1bfae; color: #4a3b32; }
         .btn-next { background-color: #aed1d1; color: #2c4a4a; flex-grow: 1; font-size: 1.1rem; }
         .btn-play { background-color: #aed1ae; color: #2c4a2c; flex-grow: 1; font-size: 1.1rem; }
@@ -267,7 +265,6 @@
             border-radius: 4px;
         }
 
-        /* ページ番号表示 */
         .page-counter {
             font-size: 1.1rem;
             font-weight: bold;
@@ -279,7 +276,6 @@
             text-align: center;
         }
 
-        /* オプション設定エリア */
         .options-panel {
             display: flex;
             align-items: center;
@@ -292,33 +288,19 @@
             flex-wrap: wrap;
         }
 
-        /* スライダー */
         input[type="range"] {
             width: 80px;
             accent-color: #555;
         }
 
-        /* ユーティリティ */
         .hidden { display: none !important; }
-        
-        /* --- レスポンシブ対応 (タブレット 768px-1024px) --- */
-        @media (max-width: 1024px) {
-            .book-wrapper {
-                aspect-ratio: auto;
-                min-height: 400px;
-            }
 
-            .book-container, .next-page-background {
-                width: 150vw;
-                height: 140vh;
-                top: -35vh;
-                left: -40vw;
-            }
-
+        /* --- タブレット対応 (768px-1200px) --- */
+        @media (max-width: 1200px) {
             .canvas-container {
                 bottom: 22vh;
                 right: 5%;
-                width: min(75vw, 420px);
+                width: min(65vw, 400px);
                 height: auto;
                 aspect-ratio: 450 / 350;
             }
@@ -328,8 +310,7 @@
                 left: 5%;
                 top: 15vh;
                 font-size: 1rem;
-                width: auto;
-                max-width: 60%;
+                max-width: 55%;
             }
 
             .social-text h2 {
@@ -337,29 +318,14 @@
                 margin-bottom: 20px;
             }
 
-            .social-text p {
-                margin-bottom: 15px;
-                font-size: 0.95rem;
-            }
-
             button {
                 padding: 10px 16px;
                 font-size: 0.95rem;
             }
-
-            .controls-row {
-                gap: 10px;
-            }
         }
 
-        /* --- レスポンシブ対応 (スマホ 600px以下) --- */
+        /* --- スマホ対応 (600px以下) --- */
         @media (max-width: 600px) {
-            .book-wrapper {
-                aspect-ratio: auto;
-                min-height: 350px;
-            }
-
-            /* 本をスマホ画面に最適化 */
             .book-container, .next-page-background {
                 width: 200vw;
                 height: 150vh;
@@ -373,7 +339,6 @@
                     15px 15px 25px rgba(0,0,0,0.3);
             }
 
-            /* キャンバス（落書きエリア）を画面の中央上に配置 */
             .canvas-container {
                 position: absolute;
                 bottom: auto;
@@ -381,81 +346,78 @@
                 right: auto;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: min(90vw, 350px);
+                width: min(85vw, 320px);
                 height: auto;
                 aspect-ratio: 450 / 350;
                 z-index: 25;
             }
 
             .social-text {
-                opacity: 0.15;
+                opacity: 0.1;
                 right: auto;
                 left: 2vw;
                 top: 5vh;
-                font-size: 0.7rem;
+                font-size: 0.6rem;
                 max-width: 80%;
                 pointer-events: none;
             }
 
             .social-text h2 {
-                font-size: 1.2rem;
-                margin-bottom: 10px;
-                padding-bottom: 8px;
+                font-size: 1rem;
+                margin-bottom: 8px;
+                padding-bottom: 4px;
             }
 
             .social-text p {
-                margin-bottom: 10px;
-                font-size: 0.65rem;
-                line-height: 1.4;
+                margin-bottom: 6px;
+                font-size: 0.55rem;
+                line-height: 1.3;
             }
 
-            /* 下部UIコントロールの大幅コンパクト化 */
             .controls-container {
-                padding: 8px 10px 12px;
+                padding: 8px 10px;
                 gap: 6px;
-                background: rgba(255, 255, 255, 0.92);
+                background: rgba(255, 255, 255, 0.95);
+                max-height: 30vh;
             }
 
             .controls-row {
                 gap: 6px;
-                align-items: stretch;
             }
 
             button {
                 padding: 6px 10px;
-                font-size: 0.75rem;
-                min-height: 40px;
-                border-radius: 3px;
+                font-size: 0.8rem;
+                min-height: 38px;
                 flex: 1 1 auto;
             }
 
             .btn-prev, .btn-next, .btn-play, .btn-stop {
                 font-size: 0.8rem;
-                flex-grow: 1;
             }
 
             .btn-small {
                 padding: 6px 8px;
-                font-size: 0.7rem;
+                font-size: 0.75rem;
                 flex: 0 1 auto;
             }
 
             .page-counter {
                 padding: 6px 10px;
-                font-size: 0.75rem;
-                min-width: 50px;
+                font-size: 0.8rem;
+                min-width: 55px;
                 flex-shrink: 0;
             }
 
             .options-panel {
                 padding: 6px 10px;
-                font-size: 0.7rem;
+                font-size: 0.75rem;
                 gap: 8px;
                 width: 100%;
             }
 
             .options-panel label {
-                font-size: 0.7rem;
+                font-size: 0.75rem;
                 white-space: nowrap;
             }
 
@@ -466,49 +428,36 @@
             }
 
             input[type="range"] {
-                width: 50px;
-                height: 20px;
+                width: 45px;
+                height: 18px;
             }
 
-            /* 第1行：ページカウンター + ボタン */
             .controls-row:first-of-type {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+                justify-content: flex-start;
             }
 
             .controls-row:first-of-type > div {
                 display: flex;
                 gap: 6px;
-                flex: 1;
             }
         }
 
-        /* --- 超小型デバイス (320px以下) --- */
+        /* --- 超小型 (320px以下) --- */
         @media (max-width: 320px) {
+            .canvas-container {
+                width: min(90vw, 280px);
+            }
+
             button {
-                padding: 4px 6px;
-                font-size: 0.65rem;
+                padding: 5px 8px;
+                font-size: 0.7rem;
                 min-height: 36px;
             }
 
-            .controls-container {
-                padding: 4px 6px 8px;
-            }
-
-            .canvas-container {
-                width: min(95vw, 300px);
-            }
-
             .page-counter {
-                padding: 4px 6px;
-                font-size: 0.65rem;
-                min-width: 45px;
-            }
-
-            .options-panel {
-                padding: 4px 6px;
-                font-size: 0.65rem;
+                padding: 5px 8px;
+                font-size: 0.7rem;
+                min-width: 50px;
             }
 
             input[type="range"] {
@@ -519,22 +468,15 @@
 </head>
 <body>
 
-    <!-- ページ全体がめくれる領域 -->
     <div class="book-wrapper" id="bookWrapper">
-        
-        <!-- 次のページ（アニメーション時に下から現れる背景） -->
         <div class="next-page-background" id="nextPageBg">
-            <!-- 表面と同じテキスト構造のクローンを入れるための場所 -->
             <div class="next-page-content" id="nextPageContent"></div>
-            <!-- 次のページのキャンバス内容を表示するキャンバス -->
             <div class="canvas-container" style="z-index: 1;">
-                 <canvas id="nextPageCanvas" width="450" height="350"></canvas>
+                <canvas id="nextPageCanvas" width="450" height="350"></canvas>
             </div>
         </div>
 
-        <!-- 現在のページ（これ全体が回転する） -->
         <div class="book-container" id="currentBookPage">
-            <!-- 教科書のダミーテキスト -->
             <div class="social-text" id="socialTextContent">
                 <h2>第5章 近代国家への道</h2>
                 <div style="display: flex; gap: 40px; flex-wrap: wrap;">
@@ -551,33 +493,26 @@
                 </div>
             </div>
 
-            <!-- 落書きエリア -->
             <div class="canvas-container">
-                <!-- 透かし用 -->
                 <canvas id="onionCanvas" width="450" height="350"></canvas>
-                <!-- 描画・再生用 -->
                 <canvas id="drawCanvas" width="450" height="350"></canvas>
             </div>
-            
-            <!-- 回転した時に見える裏面要素（CSSで制御） -->
         </div>
     </div>
 
-    <!-- UIコントロール -->
     <div class="controls-container">
         <div class="controls-row">
             <div class="page-counter" id="pageCounter">P.1 / 1</div>
-            
             <div style="display: flex; gap: 6px;">
-                <button id="clearBtn" class="btn-small" title="このページを消す">🧽</button>
-                <button id="downloadBtn" class="btn-small" title="GIF画像として保存" disabled>💾</button>
+                <button id="clearBtn" class="btn-small" title="このページを消す">🧽 消す</button>
+                <button id="downloadBtn" class="btn-small" title="GIF保存" disabled>💾 GIF</button>
             </div>
         </div>
         
         <div class="options-panel">
             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
                 <input type="checkbox" id="onionSkinToggle" checked>
-                <span>前のページを透かす</span>
+                <span>透かし</span>
             </label>
             <label style="display: flex; align-items: center; gap: 5px;">
                 速度:
@@ -587,7 +522,7 @@
         
         <div class="controls-row" id="editControls">
             <button id="prevBtn" class="btn-prev">◀ 前</button>
-            <button id="nextBtn" class="btn-next">次 ▶</button>
+            <button id="nextBtn" class="btn-next">次へ ▶</button>
             <button id="playBtn" class="btn-play">▶ 再生</button>
         </div>
 
@@ -612,17 +547,14 @@
             fps: 6,
             showOnionSkin: true,
             lastX: 0,
-            lastY: 0,
-            isMobile: window.innerWidth <= 600
+            lastY: 0
         };
 
-        // DOM要素の取得
         const drawCanvas = document.getElementById('drawCanvas');
         const ctx = drawCanvas.getContext('2d', { willReadFrequently: true });
         const onionCanvas = document.getElementById('onionCanvas');
         const onionCtx = onionCanvas.getContext('2d', { willReadFrequently: true });
         
-        // アニメーション用要素
         const currentBookPage = document.getElementById('currentBookPage');
         const nextPageBg = document.getElementById('nextPageBg');
         const nextPageCanvas = document.getElementById('nextPageCanvas');
@@ -630,7 +562,6 @@
         const socialTextContent = document.getElementById('socialTextContent');
         const nextPageContent = document.getElementById('nextPageContent');
 
-        // UI要素
         const pageCounter = document.getElementById('pageCounter');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
@@ -647,12 +578,8 @@
             nextPageContent.innerHTML = socialTextContent.innerHTML;
             nextPageContent.className = 'social-text';
 
-            window.addEventListener('resize', () => {
-                state.isMobile = window.innerWidth <= 600;
-                resizeCanvas();
-            });
-
             resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
             
             setTimeout(() => {
                 if (state.pages.length === 0) {
@@ -665,9 +592,6 @@
         }
 
         function resizeCanvas() {
-            const container = document.querySelector('.canvas-container');
-            if (!container) return;
-
             const width = 450;
             const height = 350;
             
@@ -771,18 +695,14 @@
         }
 
         function updateUI() {
-            const isMobile = state.isMobile;
-            const pageText = isMobile ? 
-                `P.${state.currentPageIndex + 1}/${Math.max(state.pages.length, state.currentPageIndex + 1)}` :
-                `P.${state.currentPageIndex + 1} / ${Math.max(state.pages.length, state.currentPageIndex + 1)}`;
-            pageCounter.textContent = pageText;
+            pageCounter.textContent = `P.${state.currentPageIndex + 1} / ${Math.max(state.pages.length, state.currentPageIndex + 1)}`;
             
             prevBtn.disabled = state.currentPageIndex === 0;
             
             if (state.currentPageIndex === state.pages.length - 1) {
-                nextBtn.textContent = isMobile ? '次 ▶' : '次のページへ ▶';
+                nextBtn.textContent = '➕ 新規';
             } else {
-                nextBtn.textContent = isMobile ? '▶' : '次のページへ ▶';
+                nextBtn.textContent = '次へ ▶';
             }
 
             if (state.pages.length > 1) {
@@ -795,8 +715,7 @@
         }
         
         function updateGIFButtonState() {
-            const hasEnoughPages = state.pages.length > 1;
-            downloadBtn.disabled = !hasEnoughPages;
+            downloadBtn.disabled = state.pages.length < 2;
         }
 
         function setupEventListeners() {
@@ -843,7 +762,6 @@
 
             playBtn.addEventListener('click', startAnimation);
             stopBtn.addEventListener('click', stopAnimation);
-            
             downloadBtn.addEventListener('click', generateAndDownloadGIF);
         }
 
@@ -857,9 +775,7 @@
             clearBtn.disabled = true;
             
             onionCtx.clearRect(0, 0, onionCanvas.width, onionCanvas.height);
-            
             nextPageBg.style.display = 'block';
-            
             currentBookPage.classList.add('soft-flip-active');
             
             let playIndex = 0;
@@ -877,11 +793,9 @@
                 nextCtx.putImageData(state.pages[nextIndex], 0, 0);
                 
                 currentBookPage.style.setProperty('--flip-duration', `${durationMs}ms`);
-                
                 pageCounter.textContent = `P.${playIndex + 1}`;
                 
                 playIndex = nextIndex;
-                
                 state.playIntervalId = setTimeout(playNextFrame, durationMs);
             };
 
@@ -944,11 +858,9 @@
 
             gifshot.createGIF(gifOptions, function(obj) {
                 if(!obj.error) {
-                    const image = obj.image;
-                    
                     const link = document.createElement('a');
                     link.download = 'parapara_manga.gif';
-                    link.href = image;
+                    link.href = obj.image;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -962,7 +874,6 @@
         }
 
         window.onload = init;
-
     </script>
 </body>
 </html>
