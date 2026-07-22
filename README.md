@@ -6,8 +6,13 @@
 
 - ファイル: `index.html`
 - 種類: 静的サイト（HTML）
+- 教科書の端っこに描く「パラパラマンガ」を作成できるウェブアプリです
 
 ローカルでブラウザに直接読み込むか、簡易的なHTTPサーバーで配信して動作を確認できます。
+
+## 🚀 今すぐ遊ぶ
+
+**[パラパラマンガを作成する →](https://itoksk-sanyo.github.io/parapara/)**
 
 ## 動作確認（ローカル）
 
@@ -24,11 +29,9 @@ python -m http.server 8000
 
 ## GitHub Pagesでの公開
 
-このリポジトリは静的サイトなので、GitHub Pagesで公開できます。GitHubリポジトリのSettings -> Pages から公開設定を行ってください。公開された場合、通常は次の形式でアクセスできます:
+このリポジトリは静的サイトなので、GitHub Pagesで公開できます。GitHubリポジトリのSettings -> Pages から公開設定を行ってください。
 
-https://<ユーザー名>.github.io/<リポジトリ名>/
-
-（例: https://itoksk-sanyo.github.io/parapara/ ）
+公開リンク: https://itoksk-sanyo.github.io/parapara/
 
 ## 開発・編集
 
